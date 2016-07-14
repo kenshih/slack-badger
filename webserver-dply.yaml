@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: webserver
+  namespace: badger-ken
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: webserver
+    spec:
+      containers:
+      - name: webserver
+        image: mup.cr/badger-ken/webserver:1
+        env:
+        - name: GET_HOSTS_FROM
+          value: dns
