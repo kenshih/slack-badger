@@ -2,7 +2,8 @@
   (:use ring.middleware.params
         ring.util.response
         ring.adapter.jetty
-        clojure.string)
+        clojure.string
+        badger.badgerer)
   (:gen-class))
 
 (declare cmd-default http200)

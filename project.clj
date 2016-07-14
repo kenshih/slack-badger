@@ -7,6 +7,7 @@
                 [org.clojure/clojure "1.8.0"]
                 [ring/ring-core "1.4.0"]
                 [ring/ring-jetty-adapter "1.4.0"]
+                [quil "2.4.0"]
                 ]
   :main ^:skip-aot badger.core
   :target-path "target/%s"
