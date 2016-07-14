@@ -18,3 +18,11 @@ IP_LOCAL_APP_CONTAINER=(docker-machine ip default)
 docker kill badger-running
 curl http://192.168.99.100:3000/hi
 docker run -p 3000:80 --rm --name badger-running badger-app
+
+## deployment steps
+export BUILD_NUMBER=6
+make package publish
+## need to update version in here:
+kubectl apply -f webserver-dply.yaml
+kubectl --namespace badger-ken describe deployments webserver
+curl http://104.196.11.217:3000/
