@@ -16,4 +16,5 @@
                  (q/save result-filename)))
       :title "saving to file"
       :draw (fn [] nil))
-    (.exit badged-profile)))
+    (.exit badged-profile)
+    result-filename))
