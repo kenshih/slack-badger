@@ -10,8 +10,14 @@
   (:gen-class))
 (require '[org.httpkit.client :as http])
 (require '[clojure.data.json :as json])
+(import '[org.apache.commons.lang3 RandomStringUtils])
 
-(declare cmd-default http200 post-one)
+(declare cmd-default http200 post-one bust)
+
+(defn msg-leader-entry [person-name badge-title url] (format "%s is a %s\n%s" person-name badge-title (bust url)))
+(defn msg-leader-entry-title [person-name num] (format "%s has %s awards!" person-name num))
+(defn msg-award [person-name badge-name] (format "@%s receives the badge '%s'" person-name badge-name))
+(defn msg-award-err [] "you need to enter a recipient and an award for this to work")
 
 (def badge-cc { :title "Coverage Cueen"
                 :desc "covered so much code, the code could sleep well"
@@ -34,7 +40,22 @@
   "sak" [badge-hd]
   })
 
+; users and badges
+(def profile-img-by-user {
+  "kristen" "kristen.png"
+  "ken" "ken.png"
+  "bryanvelzy" "bryanvelzy.png"
+  "sak" "sak.png"
+  })
+
+; hard-coded fake ordering of leaderboard!
 (def top-users ["kristen" "sak" "bryanvelzy" "ken"])
+
+; mapping
+(def summary-badge-numbers {
+  "gen1" 1
+  "gen2" 2
+  })
 
 (defn attachJson [title footer icon-url]
   (let [  template (str   "{\"fallback\": \"%s\","
@@ -105,10 +126,12 @@
 
 (defn cmd-top [channel]
   (doseq [u top-users]
-    (post-one (channel-name channel) (format "%s has %s awards!" u (count (users u))))
+    (Thread/sleep 200)
+    (post-one (channel-name channel) (msg-leader-entry-title u (count (users u))))
     (doseq [b (users u)]
+      (Thread/sleep 200) ;hack to get ordering in ui right
       (post-one (channel-name channel)
-        (format "%s has earned %s (%s)" u (:title b) (:ico-url b))
+        (msg-leader-entry u (:title b) (:ico-url b))
         )))
   {:status 200})
 
@@ -118,12 +141,20 @@
    {:form-params {:payload (json/write-str {:channel channel "text" text})}})
    )
 
+; http utils
 (defn http200 [body]
   {:status 200
     :headers {"Content-Type" "application/json"}
     :body (str body)
   })
+; cache buster
+(defn bust [url]
+  (str url "?" (RandomStringUtils/randomAlphanumeric 2)))
 
+;
+; cmd(s) are expected to
+; return a ring "response" object
+;
 (defn cmd-award [channel text]
   (let [
         terms (split text #" ")
@@ -132,13 +163,9 @@
         ]
     (if (= 3 should-be-3)
       (let [name (terms 1) badge (terms 2)]
-        (post-one channel-name (format "@%s receives the badge '%s'" name (:title (badges badge)))))
-      (post-one channel-name "you need to enter a recipient and an award for this to work")
-    )
-    {:status 200
-      ;:headers {"Content-Type" "application/json"}
-      ;:body (str "here is what the cmd looks like " text "\n")
-    }))
+        (post-one channel-name (msg-award name (:title (badges badge)))))
+      (post-one channel-name (msg-award-err)))
+    {:status 200})) ; suppress feedback in favor of dynamic feedback
 
 (defn cmd-default []
   {:status 200
@@ -147,8 +174,23 @@
   }
   )
 
-(defn handler [{params :params}]
+; profile image creation
+(defn cmd-create-profile [text server-name]
+  (defn msg [base-url user-name summary-badge]
+    (http200 (str base-url (add-badge (profile-img-by-user user-name) (summary-badge-numbers summary-badge))))
+    )
+    (let [
+      terms (split text #" ")
+      u (terms 1)
+      badge (terms 2)
+      ]
+      (msg (format "http://%s:3000/" server-name) u badge))
+    )
+
+(defn handler [request]
   (let [
+    params (:params request)
+    server-name (:server-name request)
     channel_id (params "channel_id")
     channel_name (params "channel_name")
     user_id (params "user_id")
@@ -163,7 +205,7 @@
     "leaderboard" (cmd-top channel_name)
     "award" (cmd-award channel_name text)
     "response-url" (http200 (str "response-url: " response_url "\n"))
-    "create-badge" (http200 (str "http://localhost:3000/" (add-badge "CuppWat.jpg" 1)))
+    "create-profile" (cmd-create-profile text server-name)
     (cmd-default)
     )))
 
@@ -173,11 +215,6 @@
       (handler request)
     ))
 
-'(defn app [request]
-  (router request))
-'(def app
-  (-> handler wrap-params wrap-spy)
-  )
 (def app
     (-> router (wrap-resource "public") (wrap-content-type) wrap-params))
 

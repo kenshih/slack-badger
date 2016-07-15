@@ -10,6 +10,7 @@
                 [quil "2.4.0"]
                 [http-kit "2.1.8"]
                 [org.clojure/data.json "0.2.6"]
+                [org.apache.commons/commons-lang3 "3.4"]
                 ]
   :main ^:skip-aot badger.core
   :target-path "target/%s"
