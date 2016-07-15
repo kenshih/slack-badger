@@ -12,32 +12,107 @@
 (require '[clojure.data.json :as json])
 (import '[org.apache.commons.lang3 RandomStringUtils])
 
-(declare cmd-default http200 post-one bust)
+(declare cmd-default http200 post-one bust summary-badge-numbers mk-image-url)
 
 (defn msg-leader-entry [person-name badge-title url] (format "%s is a %s\n%s" person-name badge-title (bust url)))
 (defn msg-leader-entry-title [person-name num] (format "%s has %s awards!" person-name num))
 (defn msg-award [person-name badge-name] (format "@%s receives the badge '%s'" person-name badge-name))
 (defn msg-award-err [] "you need to enter a recipient and an award for this to work")
 
+; mapping to badge #
+(def summary-badge-numbers {
+  "star" 0
+  "crown" 1
+  "cupp" 13
+  "codekiller" 3
+  "grace" 4
+  "mentor" 5
+  "email" 6
+  "onboarded" 7
+  "anniversary" 8
+  "crawl" 9
+  "catchall" 2
+  "hack" 10
+  })
+; "cueen" badge-cc
+; "codekiller" badge-codekiller
+; "grace" badge-grace
+; "mentor" badge-mentor
+; "email" badge-email
+; "onboarded" badge-onboarded
+; "anniversary" badge-anniversary
+; "crawl" badge-crawl
+; "catchall" badge-catchall
+; "hack" badge-hd
+
 (def badge-cc { :title "Coverage Cueen"
                 :desc "covered so much code, the code could sleep well"
-                :ico-url "http://www.gummyworm.net/wp-content/uploads/2015/02/Pinguino-png-129x129.png"
+                :ico-url "badge_crown.png"
                 })
-
+(def badge-codekiller { :title "Code Killer"
+                :desc "Cleaned up the most code in an H"
+                :ico-url "badge-codekiller.png"
+                })
+(def badge-grace { :title "Amazing Grace"
+                :desc "For extraordinary contributions in testing"
+                :ico-url "badge_grace.png"
+              })
+(def badge-mentor { :title "MEME Mentor"
+                :desc "Taught a class on testing"
+                :ico-url "badge_mentor.png"
+                })
+(def badge-email { :title "Email Destroyer"
+                :desc "Answered 100 support emails in a single day. Able to leap tall buildings in a single bound."
+                :ico-url "badge_email.png"
+                })
+; (def badge- { :title "FAFF Attendee"
+;                 :desc "RSVP and attend a FAFF"
+;                 :ico-url "badge_.png"
+;                 })
+(def badge-onboarded { :title "On your way!"
+                :desc "Complete your on-boarding training"
+                :ico-url "badge_onboarded.png"
+                })
+(def badge-anniversary { :title "Happy Anniversary"
+                :desc "Receive this badge on the day of your work anniversary"
+                :ico-url "badge_anniversary.png"
+                })
+(def badge-crawl { :title "Meetup Crawler"
+                :desc "Went on a Meetup Crawl"
+                :ico-url "badge_crawl.png"
+                })
+; (def badge- { :title "Propper"
+;                 :desc "Received/Given a Prop at Mupdate"
+;                 :ico-url "badge_.png"
+;                 })
+(def badge-catchall { :title "Gotta Catch Em All"
+                :desc "Gain at least 5 badges"
+                :ico-url "badge_catchemall.png"
+                })
 (def badge-hd { :title "Hackday Winner"
                 :desc "no one can ever take that from ya!"
-                :ico-url "https://platform.slack-edge.com/img/default_application_icon.png"
+                :ico-url "badge_meetupswarm.png"
                 })
 
 ; lookup of badges by key
-(def badges {"cueen" badge-cc "hack" badge-hd})
+(def badges {"cueen" badge-cc
+  "codekiller" badge-codekiller
+  "grace" badge-grace
+  "mentor" badge-mentor
+  "email" badge-email
+  "onboarded" badge-onboarded
+  "anniversary" badge-anniversary
+  "crawl" badge-crawl
+  "catchall" badge-catchall
+  "hack" badge-hd
+  })
 
 ; users and badges
 (def users {
-  "kristen" [badge-cc badge-hd]
-  "ken" [badge-cc]
-  "bryanvelzy" [badge-cc]
-  "sak" [badge-hd]
+  "kristen" [badge-codekiller badge-mentor badge-hd badge-crawl badge-catchall]
+  "ken" [badge-codekiller badge-cc]
+  "bryanvelzy" [badge-email badge-mentor badge-anniversary]
+  "sak" [badge-mentor badge-grace badge-email badge-onboarded]
   })
 
 ; users and badges
@@ -51,57 +126,34 @@
 ; hard-coded fake ordering of leaderboard!
 (def top-users ["kristen" "sak" "bryanvelzy" "ken"])
 
-; mapping
-(def summary-badge-numbers {
-  "gen1" 1
-  "gen2" 2
-  })
 
-(defn attachJson [title footer icon-url]
+
+(defn attachJson [title footer icon-url server-name]
   (let [  template (str   "{\"fallback\": \"%s\","
             "\"color\": \"#36a64f\", "
             "\"title\": \"%s\","
             "\"footer\": \"%s\","
             "\"footer_icon\": \"%s\"}")
           ]
-          (format template title title footer icon-url)
+          (format template title title footer (mk-image-url icon-url server-name))
   ))
 
-(def listJson
-  (let [  template (str
-    "{\"response_type\": \"in_channel\","
-    "\"text\": \"Here is the list of possible badges\","
-    "\"attachments\": [%s, %s]"
-    "}")
-    ]
-    (format template
-      (attachJson (:title badge-cc) (:desc badge-cc) (:ico-url badge-cc))
-      (attachJson (:title badge-hd) (:desc badge-hd) (:ico-url badge-hd))
-    )
-  ))
+; dtod dyn
+(defn listJson[server-name]
+  (defn mk-tmpl-with-more [m]
+    (str
+      "{\"response_type\": \"in_channel\","
+      "\"text\": \"Here is the list of possible badges\","
+      "\"attachments\": [" m "]"
+      "}"))
+    (mk-tmpl-with-more
+     (join ", " (map #(attachJson (:title %) (:desc %) (:ico-url %) server-name) (vals badges)))
+     )
+  )
 
-(def topJson
-  (let [  template (str
-    "{\"response_type\": \"in_channel\","
-    "\"text\": \"Here are the top Badgers!\","
-    "\"attachments\": [%s, %s]"
-    "}")
-    ]
-    (format template
-      (attachJson (:title badge-cc) (:desc badge-cc) (:ico-url badge-cc))
-      (attachJson (:title badge-hd) (:desc badge-hd) (:ico-url badge-hd))
-    )
-  ))
 ;
 ; Routing and such follows
 ;
-
-(def hard-response
-  (str "{\"response_type\": \"in_channel\",\"text\": \"Here are the top Badgers!\" "
-  ",\"attachments\": [{\"fallback\": \"Coverage Cueen\", \"color\": \"#36a64f\", \"title\": \"Coverage Cueen\",\"footer\": \"covered so much code, the code could sleep well\",\"footer_icon\": \"http://www.gummyworm.net/wp-content/uploads/2015/02/Pinguino-png-129x129.png\"},{\"fallback\": \"Required plain-text summary of the attachment.\", \"color\": \"#36a64f\", \"title\": \"Hackathon winner\",\"footer\": \"no one can ever take that from ya!\",\"footer_icon\": \"https://platform.slack-edge.com/img/default_application_icon.png\"}]"
-  "}"
-  ))
-
 (def default-response
   (str "{\"response_type\": \"in_channel\",\"text\": \"(default unconfigured response)\" }\n"
   ))
@@ -120,18 +172,18 @@
   )
 
 
-(defn cmd-list [] (http200 listJson))
+(defn cmd-list [server-name] (http200 (listJson server-name)))
 
 (defn channel-name [channel] (str "#" channel))
 
-(defn cmd-top [channel]
+(defn cmd-top [channel server-name]
   (doseq [u top-users]
     (Thread/sleep 200)
     (post-one (channel-name channel) (msg-leader-entry-title u (count (users u))))
     (doseq [b (users u)]
       (Thread/sleep 200) ;hack to get ordering in ui right
       (post-one (channel-name channel)
-        (msg-leader-entry u (:title b) (:ico-url b))
+        (msg-leader-entry u (:title b) (mk-image-url (:ico-url b) server-name))
         )))
   {:status 200})
 
@@ -151,6 +203,10 @@
 (defn bust [url]
   (str url "?" (RandomStringUtils/randomAlphanumeric 2)))
 
+; format imge url
+(defn mk-image-url [file-name server-name]
+  (format "http://%s:3000/%s" server-name file-name)
+  )
 ;
 ; cmd(s) are expected to
 ; return a ring "response" object
@@ -201,8 +257,8 @@
     first-text ((split text #" ") 0)
     ]
   (case first-text
-    "list" (cmd-list)
-    "leaderboard" (cmd-top channel_name)
+    "list" (cmd-list server-name)
+    "leaderboard" (cmd-top channel_name server-name)
     "award" (cmd-award channel_name text)
     "response-url" (http200 (str "response-url: " response_url "\n"))
     "create-profile" (cmd-create-profile text server-name)
