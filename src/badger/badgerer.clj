@@ -2,7 +2,9 @@
   "hands out the badge onto the profile pic"
   (:require [quil.core :as q]))
 
-(defn add-badge [profile-filename badge-num]
+(defn add-badge
+  "receives profile pic filename and badge number, and saves the badged pic and return the filename"
+  [profile-filename badge-num]
   (let [result-filename (clojure.string/replace profile-filename #"\." (str "_" badge-num "."))
         profile-size 600 badge-size 200]
     (q/defsketch badged-profile
