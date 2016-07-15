@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
       - name: webserver
-        image: mup.cr/badger-ken/webserver:7
+        image: mup.cr/badger-ken/webserver:8
         env:
         - name: GET_HOSTS_FROM
           value: dns

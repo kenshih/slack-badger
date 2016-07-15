@@ -20,7 +20,7 @@ curl http://192.168.99.100:3000/hi
 docker run -p 3000:80 --rm --name badger-running badger-app
 
 ## deployment steps
-export BUILD_NUMBER=6
+export BUILD_NUMBER=8
 make package publish
 ## need to update version in here:
 kubectl apply -f webserver-dply.yaml
@@ -39,6 +39,6 @@ http://www.http-kit.org/client.html
 
  (require '[org.httpkit.client :as http])
   (require '[clojure.data.json :as json])
-  
+
 (http/post "https://hooks.slack.com/services/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"
   {:form-params {:payload (json/write-str {:channel "#random" "text" "test from lein"})}})
