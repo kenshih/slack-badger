@@ -26,3 +26,9 @@ make package publish
 kubectl apply -f webserver-dply.yaml
 kubectl --namespace badger-ken describe deployments webserver
 curl http://104.196.11.217:3000/
+
+
+{
+    "mrkdwn": false,
+    "text": "joe has earned \n http://www.gummyworm.net/wp-content/uploads/2015/02/Pinguino-png-129x129.png"
+}

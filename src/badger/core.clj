@@ -1,5 +1,7 @@
 (ns badger.core
   (:use ring.middleware.params
+        ring.middleware.resource
+        ring.middleware.content-type
         ring.util.response
         ring.adapter.jetty
         clojure.string)
@@ -123,9 +125,22 @@
     (cmd-default)
     )))
 
-(def app
-  (-> handler wrap-params)
+(defn router [request]
+  (let [ uri (:uri request)
+      ]
+      (if (.startsWith uri "/public")
+        nil ;(http200 (str uri))
+        (handler request)
+      )
+    ))
+
+'(defn app [request]
+  (router request))
+'(def app
+  (-> handler wrap-params wrap-spy)
   )
+(def app
+    (-> router (wrap-resource "public") (wrap-content-type) wrap-params))
 
 (defn -main
   "starts web application"
