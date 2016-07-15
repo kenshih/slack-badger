@@ -50,7 +50,7 @@
                 :ico-url "badge_crown.png"
                 })
 (def badge-codekiller { :title "Code Killer"
-                :desc "Cleaned up the most code this year. unused code sitting around not only causes clutter, but makes the codebase very error prone"
+                :desc "Cleaned up the most code in an H"
                 :ico-url "badge-codekiller.png"
                 })
 (def badge-grace { :title "Amazing Grace"
@@ -109,10 +109,10 @@
 
 ; users and badges
 (def users {
-  "kristen" [badge-cc badge-mentor badge-hd]
-  "ken" [badge-cc]
-  "bryanvelzy" [badge-cc badge-mentor]
-  "sak" [badge-mentor badge-hd]
+  "kristen" [badge-codekiller badge-mentor badge-hd badge-crawl badge-catchall]
+  "ken" [badge-codekiller badge-cc]
+  "bryanvelzy" [badge-email badge-mentor badge-anniversary]
+  "sak" [badge-mentor badge-grace badge-email badge-onboarded]
   })
 
 ; users and badges
