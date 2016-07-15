@@ -5,11 +5,13 @@
         ring.util.response
         ring.adapter.jetty
         clojure.string
-        badger.badgerer)
+        badger.badgerer
+        )
   (:gen-class))
+(require '[org.httpkit.client :as http])
+(require '[clojure.data.json :as json])
 
-(declare cmd-default http200)
-
+(declare cmd-default http200 post-one)
 
 (def badge-cc { :title "Coverage Cueen"
                 :desc "covered so much code, the code could sleep well"
@@ -20,6 +22,19 @@
                 :desc "no one can ever take that from ya!"
                 :ico-url "https://platform.slack-edge.com/img/default_application_icon.png"
                 })
+
+; lookup of badges by key
+(def badges {"cueen" badge-cc "hack" badge-hd})
+
+; users and badges
+(def users {
+  "kristen" [badge-cc badge-hd]
+  "ken" [badge-cc]
+  "bryanvelzy" [badge-cc]
+  "sak" [badge-hd]
+  })
+
+(def top-users ["kristen" "sak" "bryanvelzy" "ken"])
 
 (defn attachJson [title footer icon-url]
   (let [  template (str   "{\"fallback\": \"%s\","
@@ -86,7 +101,22 @@
 
 (defn cmd-list [] (http200 listJson))
 
-(defn cmd-top [] (http200 topJson))
+(defn channel-name [channel] (str "#" channel))
+
+(defn cmd-top [channel]
+  (doseq [u top-users]
+    (post-one (channel-name channel) (format "%s has %s awards!" u (count (users u))))
+    (doseq [b (users u)]
+      (post-one (channel-name channel)
+        (format "%s has earned %s (%s)" u (:title b) (:ico-url b))
+        )))
+  {:status 200})
+
+
+(defn post-one [channel text]
+  (http/post "https://hooks.slack.com/services/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"
+   {:form-params {:payload (json/write-str {:channel channel "text" text})}})
+   )
 
 (defn http200 [body]
   {:status 200
@@ -94,11 +124,21 @@
     :body (str body)
   })
 
-(defn cmd-award [cmd]
-  {:status 200
-    :headers {"Content-Type" "application/json"}
-    :body (str "here is what the cmd looks like " cmd "\n")
-  })
+(defn cmd-award [channel text]
+  (let [
+        terms (split text #" ")
+        should-be-3 (count terms)
+        channel-name (str "#" channel)
+        ]
+    (if (= 3 should-be-3)
+      (let [name (terms 1) badge (terms 2)]
+        (post-one channel-name (format "@%s receives the badge '%s'" name (:title (badges badge)))))
+      (post-one channel-name "you need to enter a recipient and an award for this to work")
+    )
+    {:status 200
+      ;:headers {"Content-Type" "application/json"}
+      ;:body (str "here is what the cmd looks like " text "\n")
+    }))
 
 (defn cmd-default []
   {:status 200
@@ -120,19 +160,17 @@
     ]
   (case first-text
     "list" (cmd-list)
-    "leaderboard" (cmd-top)
-    "award" (cmd-award text)
+    "leaderboard" (cmd-top channel_name)
+    "award" (cmd-award channel_name text)
     "response-url" (http200 (str "response-url: " response_url "\n"))
+    "create-badge" (http200 (str "http://localhost:3000/" (add-badge "CuppWat.jpg" 1)))
     (cmd-default)
     )))
 
 (defn router [request]
   (let [ uri (:uri request)
       ]
-      (if (.startsWith uri "/public")
-        nil ;(http200 (str uri))
-        (handler request)
-      )
+      (handler request)
     ))
 
 '(defn app [request]

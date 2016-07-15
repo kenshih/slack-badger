@@ -32,3 +32,13 @@ curl http://104.196.11.217:3000/
     "mrkdwn": false,
     "text": "joe has earned \n http://www.gummyworm.net/wp-content/uploads/2015/02/Pinguino-png-129x129.png"
 }
+
+curl -X POST --data-urlencode payload='{"channel": "#random", "text": "joe has earned \n http://www.gummyworm.net/wp-content/uploads/2015/02/Pinguino-png-129x129.png"}' https://hooks.slack.com/services/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
+
+http://www.http-kit.org/client.html
+
+ (require '[org.httpkit.client :as http])
+  (require '[clojure.data.json :as json])
+  
+(http/post "https://hooks.slack.com/services/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"
+  {:form-params {:payload (json/write-str {:channel "#random" "text" "test from lein"})}})
