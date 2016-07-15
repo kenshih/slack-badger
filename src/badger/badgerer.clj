@@ -43,4 +43,4 @@
       (ref-set dest-file (prefix-path result-filename))
       (ref-set should-write true))
     (Thread/sleep 1000)
-    (result-filename)))
+    result-filename))
