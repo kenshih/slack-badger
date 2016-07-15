@@ -2,6 +2,8 @@
   "hands out the badge onto the profile pic"
   (:require [quil.core :as q]))
 
+(defn prefix-path [filename] (str "resources/public/" filename))
+
 (defn add-badge
   "receives profile pic filename and badge number, and saves the badged pic and return the filename"
   [profile-filename badge-num]
@@ -10,12 +12,12 @@
     (q/defsketch badged-profile
       :size [profile-size profile-size]
       :setup (fn []
-               (let [profile-pic (q/load-image profile-filename)
-                     badge-pic (q/load-image (str "badge_" badge-num ".png"))
+               (let [profile-pic (q/load-image (prefix-path profile-filename))
+                     badge-pic (q/load-image (prefix-path (str "badge_" badge-num ".png")))
                      badge-pos (- profile-size badge-size)]
                  (q/image profile-pic 0 0 profile-size profile-size)
                  (q/image badge-pic badge-pos badge-pos badge-size badge-size)
-                 (q/save result-filename)))
+                 (q/save (prefix-path result-filename))))
       :title "saving to file"
       :draw (fn [] nil))
     (.exit badged-profile)
