@@ -236,7 +236,7 @@
     {:status 200
       :headers {"Content-Type" "application/json"}
       :body (str "{ "
-          "\"text\" : \""
+          "\"response_type\": \"in_channel\", \"text\" : \""
           base-url (add-badge (profile-img-by-user user-name) (summary-badge-numbers summary-badge))
           "\" }"
           )})
