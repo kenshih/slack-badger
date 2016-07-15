@@ -14,7 +14,7 @@
 
 (declare cmd-default http200 post-one bust summary-badge-numbers mk-image-url)
 
-(defn msg-leader-entry [person-name badge-title url] (format "%s is a %s\n%s" person-name badge-title (bust url)))
+(defn msg-leader-entry [person-name badge-title url] (format "%s was awarded %s\n%s" person-name badge-title (bust url)))
 (defn msg-leader-entry-title [person-name num] (format "%s has %s awards!" person-name num))
 (defn msg-award [person-name badge-name] (format "@%s receives the badge '%s'" person-name badge-name))
 (defn msg-award-err [] "you need to enter a recipient and an award for this to work")
@@ -51,7 +51,7 @@
                 })
 (def badge-codekiller { :title "Code Killer"
                 :desc "Cleaned up the most code in an H"
-                :ico-url "badge-codekiller.png"
+                :ico-url "badge_codekiller.png"
                 })
 (def badge-grace { :title "Amazing Grace"
                 :desc "For extraordinary contributions in testing"
@@ -233,8 +233,13 @@
 ; profile image creation
 (defn cmd-create-profile [text server-name]
   (defn msg [base-url user-name summary-badge]
-    (http200 (str base-url (add-badge (profile-img-by-user user-name) (summary-badge-numbers summary-badge))))
-    )
+    {:status 200
+      :headers {"Content-Type" "application/json"}
+      :body (str "{ "
+          "\"text\" : \""
+          base-url (add-badge (profile-img-by-user user-name) (summary-badge-numbers summary-badge))
+          "\" }"
+          )})
     (let [
       terms (split text #" ")
       u (terms 1)
