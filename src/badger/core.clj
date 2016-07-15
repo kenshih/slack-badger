@@ -147,7 +147,7 @@
       "\"attachments\": [" m "]"
       "}"))
     (mk-tmpl-with-more
-     (join ", " (map #(attachJson (:title %) (:desc %) (:ico-url %) "lala") (vals badges)))
+     (join ", " (map #(attachJson (:title %) (:desc %) (:ico-url %) server-name) (vals badges)))
      )
   )
 
