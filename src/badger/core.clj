@@ -12,32 +12,45 @@
 (require '[clojure.data.json :as json])
 (import '[org.apache.commons.lang3 RandomStringUtils])
 
-(declare cmd-default http200 post-one bust)
+(declare cmd-default http200 post-one bust summary-badge-numbers mk-image-url)
 
 (defn msg-leader-entry [person-name badge-title url] (format "%s is a %s\n%s" person-name badge-title (bust url)))
 (defn msg-leader-entry-title [person-name num] (format "%s has %s awards!" person-name num))
 (defn msg-award [person-name badge-name] (format "@%s receives the badge '%s'" person-name badge-name))
 (defn msg-award-err [] "you need to enter a recipient and an award for this to work")
 
+; mapping
+(def summary-badge-numbers {
+  "mentor" 1
+  "poke" 2
+  "cupp" 10
+  })
+
 (def badge-cc { :title "Coverage Cueen"
                 :desc "covered so much code, the code could sleep well"
-                :ico-url "http://www.gummyworm.net/wp-content/uploads/2015/02/Pinguino-png-129x129.png"
+                :ico-url "badge_10.png" ;"http://www.gummyworm.net/wp-content/uploads/2015/02/Pinguino-png-129x129.png"
                 })
 
 (def badge-hd { :title "Hackday Winner"
                 :desc "no one can ever take that from ya!"
-                :ico-url "https://platform.slack-edge.com/img/default_application_icon.png"
+                :ico-url "badge_2.png" ;"https://platform.slack-edge.com/img/default_application_icon.png"
                 })
 
+(def badge-mentor { :title "MEME Mentor"
+                :desc "Taught a class on testing"
+                :ico-url "badge_1.png" ;"https://platform.slack-edge.com/img/default_application_icon.png"
+                })
+
+
 ; lookup of badges by key
-(def badges {"cueen" badge-cc "hack" badge-hd})
+(def badges {"cueen" badge-cc "hack" badge-hd "mentor" badge-mentor})
 
 ; users and badges
 (def users {
-  "kristen" [badge-cc badge-hd]
+  "kristen" [badge-cc badge-mentor badge-hd]
   "ken" [badge-cc]
-  "bryanvelzy" [badge-cc]
-  "sak" [badge-hd]
+  "bryanvelzy" [badge-cc badge-mentor]
+  "sak" [badge-mentor badge-hd]
   })
 
 ; users and badges
@@ -51,23 +64,19 @@
 ; hard-coded fake ordering of leaderboard!
 (def top-users ["kristen" "sak" "bryanvelzy" "ken"])
 
-; mapping
-(def summary-badge-numbers {
-  "gen1" 1
-  "gen2" 2
-  })
 
-(defn attachJson [title footer icon-url]
+
+(defn attachJson [title footer icon-url server-name]
   (let [  template (str   "{\"fallback\": \"%s\","
             "\"color\": \"#36a64f\", "
             "\"title\": \"%s\","
             "\"footer\": \"%s\","
             "\"footer_icon\": \"%s\"}")
           ]
-          (format template title title footer icon-url)
+          (format template title title footer (mk-image-url icon-url server-name))
   ))
 
-(def listJson
+(defn listJson[server-name]
   (let [  template (str
     "{\"response_type\": \"in_channel\","
     "\"text\": \"Here is the list of possible badges\","
@@ -75,23 +84,11 @@
     "}")
     ]
     (format template
-      (attachJson (:title badge-cc) (:desc badge-cc) (:ico-url badge-cc))
-      (attachJson (:title badge-hd) (:desc badge-hd) (:ico-url badge-hd))
+      (attachJson (:title badge-cc) (:desc badge-cc) (:ico-url badge-cc) server-name)
+      (attachJson (:title badge-hd) (:desc badge-hd) (:ico-url badge-hd) server-name)
     )
   ))
 
-(def topJson
-  (let [  template (str
-    "{\"response_type\": \"in_channel\","
-    "\"text\": \"Here are the top Badgers!\","
-    "\"attachments\": [%s, %s]"
-    "}")
-    ]
-    (format template
-      (attachJson (:title badge-cc) (:desc badge-cc) (:ico-url badge-cc))
-      (attachJson (:title badge-hd) (:desc badge-hd) (:ico-url badge-hd))
-    )
-  ))
 ;
 ; Routing and such follows
 ;
@@ -120,18 +117,18 @@
   )
 
 
-(defn cmd-list [] (http200 listJson))
+(defn cmd-list [server-name] (http200 (listJson server-name)))
 
 (defn channel-name [channel] (str "#" channel))
 
-(defn cmd-top [channel]
+(defn cmd-top [channel server-name]
   (doseq [u top-users]
     (Thread/sleep 200)
     (post-one (channel-name channel) (msg-leader-entry-title u (count (users u))))
     (doseq [b (users u)]
       (Thread/sleep 200) ;hack to get ordering in ui right
       (post-one (channel-name channel)
-        (msg-leader-entry u (:title b) (:ico-url b))
+        (msg-leader-entry u (:title b) (mk-image-url (:ico-url b) server-name))
         )))
   {:status 200})
 
@@ -151,6 +148,10 @@
 (defn bust [url]
   (str url "?" (RandomStringUtils/randomAlphanumeric 2)))
 
+; format imge url
+(defn mk-image-url [file-name server-name]
+  (format "http://%s:3000/%s" server-name file-name)
+  )
 ;
 ; cmd(s) are expected to
 ; return a ring "response" object
@@ -201,8 +202,8 @@
     first-text ((split text #" ") 0)
     ]
   (case first-text
-    "list" (cmd-list)
-    "leaderboard" (cmd-top channel_name)
+    "list" (cmd-list server-name)
+    "leaderboard" (cmd-top channel_name server-name)
     "award" (cmd-award channel_name text)
     "response-url" (http200 (str "response-url: " response_url "\n"))
     "create-profile" (cmd-create-profile text server-name)
